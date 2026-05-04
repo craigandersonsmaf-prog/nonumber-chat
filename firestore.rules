@@ -1,0 +1,82 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function shortText(field, max) {
+      return field is string && field.size() > 0 && field.size() <= max;
+    }
+
+    // PILOT RULES:
+    // These rules make the live pilot usable with anonymous sign-in.
+    // For a public launch, lock Creator/Admin powers using custom claims or Cloud Functions.
+
+    match /groups/{groupId} {
+      allow read: if signedIn();
+
+      // For pilot: any signed-in anonymous user may create a group.
+      allow create: if signedIn()
+        && shortText(request.resource.data.name, 80)
+        && request.resource.data.status in ['active', 'frozen'];
+
+      // For pilot: admins/creator are controlled in the front end.
+      // Do not use this as final production security.
+      allow update: if signedIn();
+
+      match /members/{memberId} {
+        allow read: if signedIn();
+        allow create, update: if signedIn()
+          && memberId == request.auth.uid
+          && shortText(request.resource.data.nickname, 32);
+      }
+
+      match /messages/{messageId} {
+        allow read: if signedIn();
+        allow create: if signedIn()
+          && request.resource.data.uid == request.auth.uid
+          && request.resource.data.type in ['message', 'shout']
+          && shortText(request.resource.data.nickname, 32)
+          && shortText(request.resource.data.text, 500);
+
+        // Pilot moderation. Lock down before public launch.
+        allow delete: if signedIn();
+      }
+
+      match /presence/{presenceId} {
+        allow read: if signedIn();
+        allow create, update: if signedIn()
+          && presenceId == request.auth.uid;
+      }
+
+      match /typing/{typingId} {
+        allow read: if signedIn();
+        allow create, update, delete: if signedIn()
+          && typingId == request.auth.uid;
+      }
+    }
+
+    match /applications/{applicationId} {
+      allow read: if signedIn(); // pilot creator dashboard can read
+      allow create: if signedIn()
+        && request.resource.data.uid == request.auth.uid
+        && shortText(request.resource.data.name, 80)
+        && shortText(request.resource.data.organisation, 120)
+        && shortText(request.resource.data.whatTheyDo, 1000)
+        && shortText(request.resource.data.reason, 1000);
+
+      // Pilot creator dashboard can approve/reject.
+      // For production, restrict this to Creator Admin only.
+      allow update: if signedIn();
+    }
+
+    match /admins/{adminId} {
+      allow read: if signedIn();
+      // Pilot creator dashboard writes admin approvals.
+      // For production, restrict this to Creator Admin only.
+      allow create, update: if signedIn();
+    }
+  }
+}

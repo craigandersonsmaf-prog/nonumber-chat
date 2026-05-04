@@ -1,0 +1,12 @@
+NoNumber Live Chat Firebase Quick Start
+
+1. Make Firebase project.
+2. Enable Anonymous Authentication.
+3. Create Firestore Database.
+4. Paste Firebase config into firebase-config.js.
+5. Paste firestore.rules into Firestore Rules and publish.
+6. Upload all files to GitHub Pages.
+7. Open the app link.
+8. Creator Admin PIN is 0000 for the pilot.
+
+This version is a real live chat once Firebase is connected.
