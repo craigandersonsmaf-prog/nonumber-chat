@@ -8,7 +8,7 @@
   <link rel="manifest" href="manifest.json" />
   <link rel="apple-touch-icon" href="assets/icon-192.png" />
   <link rel="icon" href="assets/icon-192.png" />
-  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="styles.css?v=hotfix2" />
 </head>
 <body>
   <div id="app">
@@ -17,6 +17,18 @@
       <p>Loading NoNumber Chat…</p>
     </div>
   </div>
-  <script type="module" src="app.js"></script>
+
+  <script>
+    // Hotfix: remove any older service worker/caches from previous builds.
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.getRegistrations()
+        .then(regs => regs.forEach(reg => reg.unregister()))
+        .catch(() => {});
+    }
+    if ("caches" in window) {
+      caches.keys().then(keys => keys.forEach(key => caches.delete(key))).catch(() => {});
+    }
+  </script>
+  <script type="module" src="app.js?v=hotfix2"></script>
 </body>
 </html>

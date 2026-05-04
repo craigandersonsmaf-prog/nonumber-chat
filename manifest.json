@@ -1,7 +1,7 @@
 {
   "name": "NoNumber Live Chat",
   "short_name": "NoNumber",
-  "description": "Live no-phone-number group chat with QR joining and Creator Admin pilot controls.",
+  "description": "Live no-phone-number group chat with QR joining.",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#efeae2",
