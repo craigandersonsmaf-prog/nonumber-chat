@@ -4,31 +4,454 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#075E54" />
-  <title>NoNumber Live Chat</title>
-  <link rel="manifest" href="manifest.json" />
-  <link rel="apple-touch-icon" href="assets/icon-192.png" />
-  <link rel="icon" href="assets/icon-192.png" />
-  <link rel="stylesheet" href="styles.css?v=hotfix2" />
+  <title>NoNumber Chat Rescue</title>
+  <style>
+    :root {
+      --green:#075E54; --green2:#128C7E; --light:#25D366; --bg:#efeae2;
+      --paper:#fff; --text:#111b21; --muted:#667781; --line:#e9edef;
+      --out:#d9fdd3; --danger:#fdebea; --dangerText:#a30d05;
+    }
+    * { box-sizing:border-box; }
+    html,body { margin:0; min-height:100%; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif; background:#d8dbd5; color:var(--text); }
+    body:before { content:""; position:fixed; top:0; left:0; right:0; height:130px; background:var(--green); z-index:-1; }
+    button,input,textarea { font:inherit; }
+    button { cursor:pointer; }
+    #app { max-width:540px; min-height:100svh; margin:0 auto; background:var(--bg); box-shadow:0 0 0 1px rgba(0,0,0,.08),0 10px 28px rgba(0,0,0,.13); overflow:hidden; }
+    .bar { height:66px; background:var(--green); color:white; display:flex; align-items:center; gap:11px; padding:10px 12px; }
+    .avatar { width:42px; height:42px; border-radius:50%; background:linear-gradient(135deg,var(--light),#d8ffe5); color:#063b34; display:grid; place-items:center; font-weight:950; flex:0 0 auto; }
+    .titleWrap { min-width:0; flex:1; }
+    .title { font-weight:900; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .sub { font-size:.78rem; color:rgba(255,255,255,.78); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .back { width:34px; height:40px; border:0; background:transparent; color:white; font-size:1.6rem; }
+    .screen { padding:14px; min-height:calc(100svh - 66px); }
+    .hero,.card { background:white; border-radius:20px; padding:16px; margin:10px 0; box-shadow:0 1px 2px rgba(0,0,0,.06); }
+    .hero h1 { margin:0 0 8px; font-size:1.85rem; line-height:1.05; letter-spacing:-.045em; }
+    .kicker { color:var(--green2); font-size:.76rem; font-weight:950; text-transform:uppercase; letter-spacing:.1em; margin-bottom:7px; }
+    .small { color:var(--muted); font-size:.88rem; line-height:1.45; }
+    .grid { display:grid; grid-template-columns:1fr 1fr; gap:9px; }
+    .row { display:flex; gap:9px; align-items:center; flex-wrap:wrap; }
+    .btn { border:0; border-radius:999px; padding:11px 14px; font-weight:900; min-height:43px; }
+    .primary { background:var(--green2); color:white; }
+    .ghost { background:#f0f2f5; color:var(--text); }
+    .soft { background:#e7fce9; color:var(--green); }
+    .danger { background:var(--danger); color:var(--dangerText); }
+    .full { width:100%; }
+    label { display:block; font-weight:850; margin:13px 0 6px; }
+    input,textarea { width:100%; border:1px solid #d1d7db; border-radius:13px; padding:12px; background:white; outline:none; }
+    textarea { min-height:90px; resize:vertical; }
+    .item { width:100%; border:0; text-align:left; background:white; border-radius:15px; padding:12px; margin:8px 0; display:flex; gap:12px; align-items:center; box-shadow:0 1px 2px rgba(0,0,0,.06); }
+    .itemMain { min-width:0; flex:1; }
+    .itemTitle { font-weight:900; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .itemSub { color:var(--muted); font-size:.84rem; margin-top:3px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .notice { border-radius:15px; background:#e7fce9; color:var(--green); padding:11px 12px; margin:10px 0; font-size:.88rem; line-height:1.45; }
+    .notice.danger { background:var(--danger); color:var(--dangerText); }
+    .chat { display:flex; flex-direction:column; height:calc(100svh - 66px); background:var(--bg); }
+    .chatNote { margin:8px 10px 0; background:#fff8d7; color:#6a5200; border-radius:12px; padding:7px 10px; text-align:center; font-size:.78rem; }
+    .messages { flex:1; overflow:auto; padding:10px; display:flex; flex-direction:column; gap:7px; }
+    .msg { display:flex; }
+    .msg.mine { justify-content:flex-end; }
+    .bubble { max-width:82%; background:white; border-radius:10px; padding:7px 9px 5px; box-shadow:0 1px 1px rgba(0,0,0,.13); }
+    .mine .bubble { background:var(--out); }
+    .system .bubble { margin:4px auto; max-width:94%; background:#e2f3fb; color:#53656f; text-align:center; box-shadow:none; font-size:.8rem; }
+    .shout .bubble { background:#fff6d9; }
+    .msgName { color:var(--green2); font-weight:950; font-size:.77rem; margin-bottom:2px; }
+    .msgText { white-space:pre-wrap; word-break:break-word; line-height:1.35; }
+    .msgTime { text-align:right; color:var(--muted); font-size:.68rem; margin-top:2px; }
+    .composer { background:#f0f2f5; padding:8px; display:flex; gap:7px; align-items:flex-end; }
+    .composer textarea { border:0; border-radius:22px; min-height:44px; max-height:110px; padding:12px 14px; }
+    .round,.shout { width:44px; height:44px; border-radius:50%; border:0; flex:0 0 auto; }
+    .round { background:var(--green2); color:white; font-weight:950; }
+    .shout { background:white; color:var(--green); }
+    .modalBack { position:fixed; inset:0; background:rgba(17,27,33,.55); display:grid; place-items:end center; z-index:80; padding:12px; }
+    .modal { width:min(540px,100%); max-height:88svh; overflow:auto; background:white; border-radius:24px 24px 18px 18px; padding:16px; }
+    .toast { position:fixed; left:50%; bottom:16px; transform:translateX(-50%); background:#111b21; color:white; border-radius:999px; padding:11px 14px; z-index:120; font-weight:850; text-align:center; }
+    .qrbox { background:white; border-radius:22px; padding:14px; display:grid; place-items:center; margin:12px auto; max-width:275px; }
+    .qrbox img { width:235px; height:235px; }
+    .linkbox { background:#f0f2f5; border-radius:13px; padding:10px; color:#53656f; font-size:.82rem; word-break:break-all; }
+    @media(max-width:540px) { #app { max-width:100%; box-shadow:none; } body:before { display:none; } }
+  </style>
 </head>
 <body>
-  <div id="app">
-    <div class="loading">
-      <div class="logo">NN</div>
-      <p>Loading NoNumber Chat…</p>
-    </div>
-  </div>
+<div id="app"></div>
 
-  <script>
-    // Hotfix: remove any older service worker/caches from previous builds.
-    if ("serviceWorker" in navigator) {
-      navigator.serviceWorker.getRegistrations()
-        .then(regs => regs.forEach(reg => reg.unregister()))
-        .catch(() => {});
+<script>
+  // Rescue build: remove any previous broken cache/service worker.
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.getRegistrations().then(regs => regs.forEach(r => r.unregister())).catch(()=>{});
+  }
+  if ("caches" in window) {
+    caches.keys().then(keys => keys.forEach(k => caches.delete(k))).catch(()=>{});
+  }
+</script>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
+import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
+import {
+  getFirestore, collection, doc, addDoc, updateDoc,
+  onSnapshot, query, orderBy, limit, serverTimestamp
+} from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
+
+const firebaseConfig = {
+  "apiKey": "AIzaSyAsFHKqquU2R7taNUt8q0Ys5N0dOQozlbI",
+  "authDomain": "nonumber-chat.firebaseapp.com",
+  "projectId": "nonumber-chat",
+  "storageBucket": "nonumber-chat.firebasestorage.app",
+  "messagingSenderId": "599471724020",
+  "appId": "1:599471724020:web:9a028dafe0a96eaf3955a1"
+};
+const CREATOR_PIN = "0000";
+
+let firebaseApp, auth, db, uid;
+let app = document.getElementById("app");
+let route = "home";
+let groups = [];
+let currentGroupId = localStorage.getItem("nn_group") || "";
+let nickname = localStorage.getItem("nn_nick") || "";
+let creator = localStorage.getItem("nn_creator") === "yes";
+let unsubGroups = null;
+let unsubMessages = null;
+let messages = [];
+
+boot();
+
+async function boot(){
+  try {
+    firebaseApp = initializeApp(firebaseConfig);
+    auth = getAuth(firebaseApp);
+    db = getFirestore(firebaseApp);
+    onAuthStateChanged(auth, user => {
+      if (user) {
+        uid = user.uid;
+        listenGroups();
+        render();
+      }
+    });
+    await signInAnonymously(auth);
+  } catch (e) {
+    app.innerHTML = bar("Startup Error", "Firebase") + `<main class="screen"><div class="notice danger">${escapeHtml(e.message)}</div></main>`;
+  }
+}
+
+function listenGroups(){
+  if (unsubGroups) unsubGroups();
+  unsubGroups = onSnapshot(
+    query(collection(db, "groups"), orderBy("updatedAt", "desc"), limit(50)),
+    snap => {
+      groups = snap.docs.map(d => ({ id:d.id, ...d.data() }));
+      if (route === "home" || route === "creator") render();
+    },
+    err => {
+      app.innerHTML = bar("Permission Error", "Groups") + `<main class="screen"><div class="notice danger">${escapeHtml(err.message)}</div></main>`;
     }
-    if ("caches" in window) {
-      caches.keys().then(keys => keys.forEach(key => caches.delete(key))).catch(() => {});
+  );
+}
+
+function render(){
+  if (!uid) return app.innerHTML = `<div class="screen"><div class="hero"><h1>Connecting…</h1></div></div>`;
+  if (route === "creatorLogin") return creatorLogin();
+  if (route === "creator") return creatorDashboard();
+  if (route === "chat") return chatScreen();
+  if (route === "invite") return inviteScreen();
+  return home();
+}
+
+function home(){
+  if (unsubMessages) { unsubMessages(); unsubMessages = null; }
+  const groupHtml = groups.map(g => `
+    <button class="item openGroup" data-id="${escapeHtml(g.id)}">
+      <div class="avatar">${initials(g.name)}</div>
+      <div class="itemMain"><div class="itemTitle">${escapeHtml(g.name)}</div><div class="itemSub">${escapeHtml(g.description || "No-number group chat")}</div></div>
+    </button>
+  `).join("") || `<div class="card"><h2>No groups yet</h2><p class="small">Open Creator Admin and create your first group.</p></div>`;
+
+  app.innerHTML = `
+    ${bar("NoNumber Chat", "RESCUE live build · no phone numbers")}
+    <main class="screen">
+      <section class="hero">
+        <div class="kicker">Rescue live build</div>
+        <h1>Scan. Nickname. Chat.</h1>
+        <p>A real-time group chat tool where people join by QR code without sharing phone numbers.</p>
+        <div class="notice">If you can read this, the one-file rescue build is loaded.</div>
+      </section>
+      <section>${groupHtml}</section>
+      <section class="card">
+        <div class="grid">
+          <button class="btn primary goto" data-route="creatorLogin">Creator Admin</button>
+          <button class="btn ghost toastBtn" data-msg="Good-cause form comes after the live chat test.">Good Cause Apply</button>
+          <button class="btn soft toastBtn" data-msg="Group admin flow comes after the live chat test.">Group Admin</button>
+          <button class="btn ghost nickBtn">Set nickname</button>
+        </div>
+      </section>
+    </main>
+  `;
+}
+
+function creatorLogin(){
+  app.innerHTML = `
+    ${bar("Creator Admin", "Master control", "home")}
+    <main class="screen">
+      <section class="card">
+        <h2>Creator sign in</h2>
+        <p class="small">Demo PIN: <strong>0000</strong></p>
+        <label>PIN</label>
+        <input id="pin" type="password" inputmode="numeric" />
+        <button class="btn primary full openCreator" style="margin-top:12px">Open Creator Admin</button>
+      </section>
+    </main>
+  `;
+}
+
+function creatorDashboard(){
+  if (!creator) { route = "creatorLogin"; return creatorLogin(); }
+  const cards = groups.map(g => `
+    <div class="card">
+      <h3>${escapeHtml(g.name)}</h3>
+      <p class="small">${escapeHtml(g.description || "")}</p>
+      <div class="row">
+        <button class="btn ghost openGroup" data-id="${escapeHtml(g.id)}">Open chat</button>
+        <button class="btn ghost inviteGroup" data-id="${escapeHtml(g.id)}">QR</button>
+        <button class="btn danger freezeGroup" data-id="${escapeHtml(g.id)}" data-status="${escapeHtml(g.status || "active")}">${g.status === "frozen" ? "Unfreeze" : "Freeze"}</button>
+      </div>
+    </div>
+  `).join("") || `<div class="card small">No groups yet. Create one now.</div>`;
+
+  app.innerHTML = `
+    ${bar("Creator Dashboard", "Create groups · invite · freeze", "home")}
+    <main class="screen">
+      <section class="card">
+        <div class="grid">
+          <button class="btn primary createGroup">Create group</button>
+          <button class="btn ghost logoutCreator">Log out</button>
+        </div>
+      </section>
+      ${cards}
+    </main>
+  `;
+}
+
+function chatScreen(){
+  const g = groups.find(x => x.id === currentGroupId);
+  if (!g) { route = "home"; return home(); }
+  if (unsubMessages) unsubMessages();
+  unsubMessages = onSnapshot(
+    query(collection(db, "groups", currentGroupId, "messages"), orderBy("createdAt", "asc"), limit(150)),
+    snap => {
+      messages = snap.docs.map(d => ({id:d.id, ...d.data()}));
+      paintChat(g);
+    },
+    err => {
+      app.innerHTML = bar("Permission Error", "Messages", "home") + `<main class="screen"><div class="notice danger">${escapeHtml(err.message)}</div></main>`;
     }
-  </script>
-  <script type="module" src="app.js?v=hotfix2"></script>
+  );
+  paintChat(g);
+}
+
+function paintChat(g){
+  app.innerHTML = `
+    ${bar(g.name, g.status === "frozen" ? "Frozen" : "Live chat", "home", `<button class="btn ghost inviteCurrent">QR</button>`)}
+    <main class="chat">
+      <div class="chatNote">No phone numbers · keep it light · stay in the group</div>
+      ${g.status === "frozen" ? `<div class="notice danger" style="margin:10px">This group is frozen.</div>` : ""}
+      <section class="messages" id="messages">
+        ${messages.map(msg).join("") || `<div class="card small">No messages yet.</div>`}
+      </section>
+      <form class="composer sendForm">
+        <button class="shout shoutBtn" type="button">👋</button>
+        <textarea id="message" maxlength="500" placeholder="Message" ${g.status === "frozen" ? "disabled" : ""}></textarea>
+        <button class="round" ${g.status === "frozen" ? "disabled" : ""}>➤</button>
+      </form>
+    </main>
+  `;
+  setTimeout(() => {
+    const box = document.getElementById("messages");
+    if (box) box.scrollTop = box.scrollHeight;
+  }, 50);
+}
+
+function inviteScreen(){
+  const g = groups.find(x => x.id === currentGroupId);
+  if (!g) { route = "creator"; return render(); }
+  const link = makeJoinLink(g);
+  const qr = "https://api.qrserver.com/v1/create-qr-code/?size=470x470&margin=12&data=" + encodeURIComponent(link);
+  app.innerHTML = `
+    ${bar("QR Invite", g.name, "creator")}
+    <main class="screen">
+      <section class="card">
+        <div class="kicker">Scan to join</div>
+        <h2>${escapeHtml(g.name)}</h2>
+        <div class="qrbox"><img src="${qr}" /></div>
+        <div class="linkbox" id="inviteLink">${escapeHtml(link)}</div>
+        <button class="btn primary full copyInvite" style="margin-top:10px">Copy invite</button>
+      </section>
+    </main>
+  `;
+}
+
+document.addEventListener("click", async e => {
+  const back = e.target.closest(".back");
+  if (back) { route = back.dataset.route; render(); return; }
+
+  const goto = e.target.closest(".goto");
+  if (goto) { route = goto.dataset.route; render(); return; }
+
+  if (e.target.closest(".openCreator")) {
+    const pin = document.getElementById("pin").value.trim();
+    if (pin !== CREATOR_PIN) return toast("Wrong PIN");
+    creator = true;
+    localStorage.setItem("nn_creator", "yes");
+    route = "creator";
+    render();
+    return;
+  }
+
+  if (e.target.closest(".logoutCreator")) {
+    creator = false;
+    localStorage.removeItem("nn_creator");
+    route = "home";
+    render();
+    return;
+  }
+
+  if (e.target.closest(".createGroup")) { groupModal(); return; }
+  if (e.target.closest(".nickBtn")) { nickModal(); return; }
+
+  const open = e.target.closest(".openGroup");
+  if (open) {
+    currentGroupId = open.dataset.id;
+    localStorage.setItem("nn_group", currentGroupId);
+    if (!nickname) return nickModal(() => { route = "chat"; render(); });
+    route = "chat";
+    render();
+    return;
+  }
+
+  const invite = e.target.closest(".inviteGroup");
+  if (invite) {
+    currentGroupId = invite.dataset.id;
+    localStorage.setItem("nn_group", currentGroupId);
+    route = "invite";
+    render();
+    return;
+  }
+
+  if (e.target.closest(".inviteCurrent")) { route = "invite"; render(); return; }
+
+  const freeze = e.target.closest(".freezeGroup");
+  if (freeze) {
+    const id = freeze.dataset.id;
+    const status = freeze.dataset.status === "frozen" ? "active" : "frozen";
+    await updateDoc(doc(db, "groups", id), { status, updatedAt: serverTimestamp() });
+    toast(status === "frozen" ? "Frozen" : "Unfrozen");
+    return;
+  }
+
+  if (e.target.closest(".shoutBtn")) {
+    await sendMessage("Anyone about for a bit of general chat?", "shout");
+    return;
+  }
+
+  const copy = e.target.closest(".copyInvite");
+  if (copy) {
+    await navigator.clipboard.writeText(document.getElementById("inviteLink").textContent).catch(()=>{});
+    toast("Invite copied");
+    return;
+  }
+
+  const toastButton = e.target.closest(".toastBtn");
+  if (toastButton) toast(toastButton.dataset.msg || "Done");
+});
+
+document.addEventListener("submit", async e => {
+  if (e.target.closest(".sendForm")) {
+    e.preventDefault();
+    const input = document.getElementById("message");
+    const text = input.value.trim();
+    if (text) await sendMessage(text, "message");
+    input.value = "";
+  }
+});
+
+function groupModal(){
+  modal(`
+    <h2>Create group</h2>
+    <label>Group name</label><input id="gName" placeholder="Test Chat">
+    <label>Description</label><textarea id="gDesc" placeholder="First live test group"></textarea>
+    <button class="btn primary full saveGroup" style="margin-top:12px">Create group</button>
+    <button class="btn ghost full closeModal" style="margin-top:8px">Cancel</button>
+  `);
+  document.querySelector(".closeModal").onclick = closeModal;
+  document.querySelector(".saveGroup").onclick = async () => {
+    const name = document.getElementById("gName").value.trim();
+    const description = document.getElementById("gDesc").value.trim();
+    if (!name) return toast("Add a group name");
+    const ref = await addDoc(collection(db, "groups"), {
+      name, description, status:"active", inviteCode:code(), createdBy:uid,
+      createdAt:serverTimestamp(), updatedAt:serverTimestamp()
+    });
+    await addDoc(collection(db, "groups", ref.id, "messages"), {
+      uid:"system", nickname:"Admin", type:"system", text:"Group created. Members join by QR using a nickname only.",
+      createdAt:serverTimestamp()
+    });
+    closeModal();
+    currentGroupId = ref.id;
+    localStorage.setItem("nn_group", currentGroupId);
+    route = "chat";
+    render();
+  };
+}
+
+function nickModal(done){
+  modal(`
+    <h2>Choose nickname</h2>
+    <p class="small">No phone number needed.</p>
+    <label>First name or nickname</label><input id="nick" maxlength="32" value="${escapeHtml(nickname)}" placeholder="Craig">
+    <button class="btn primary full saveNick" style="margin-top:12px">Save</button>
+  `);
+  document.querySelector(".saveNick").onclick = () => {
+    const n = document.getElementById("nick").value.trim();
+    if (!n) return toast("Add a nickname");
+    if (hasPhone(n)) return toast("Use a nickname, not a number");
+    nickname = n;
+    localStorage.setItem("nn_nick", nickname);
+    closeModal();
+    if (done) done();
+  };
+}
+
+async function sendMessage(text, type){
+  if (!nickname) return nickModal(() => sendMessage(text, type));
+  if (hasPhone(text)) return toast("Phone numbers are blocked");
+  await addDoc(collection(db, "groups", currentGroupId, "messages"), {
+    uid, nickname, type, text, createdAt:serverTimestamp()
+  });
+  await updateDoc(doc(db, "groups", currentGroupId), { updatedAt:serverTimestamp(), lastMessage:text.slice(0,80) });
+}
+
+function msg(m){
+  const mine = m.uid === uid;
+  return `
+    <article class="msg ${mine ? "mine" : ""} ${m.type === "system" ? "system" : ""} ${m.type === "shout" ? "shout" : ""}">
+      <div class="bubble">
+        ${m.type !== "system" ? `<div class="msgName">${m.type === "shout" ? "👋 " : ""}${escapeHtml(m.nickname || "Someone")}</div>` : ""}
+        <div class="msgText">${escapeHtml(m.text || "")}</div>
+        <div class="msgTime">${m.createdAt?.toDate ? m.createdAt.toDate().toLocaleTimeString([], {hour:"2-digit", minute:"2-digit"}) : ""} ${mine ? "✓" : ""}</div>
+      </div>
+    </article>
+  `;
+}
+
+function bar(title, sub="", back="", actions=""){
+  return `<header class="bar">${back ? `<button class="back" data-route="${back}">‹</button>` : ""}<div class="avatar">${initials(title)}</div><div class="titleWrap"><div class="title">${escapeHtml(title)}</div><div class="sub">${escapeHtml(sub)}</div></div>${actions}</header>`;
+}
+function modal(content){ const m = document.createElement("div"); m.className = "modalBack"; m.id = "modal"; m.innerHTML = `<div class="modal">${content}</div>`; document.body.appendChild(m); }
+function closeModal(){ document.getElementById("modal")?.remove(); }
+function toast(text){ document.getElementById("toast")?.remove(); const t = document.createElement("div"); t.className = "toast"; t.id = "toast"; t.textContent = text; document.body.appendChild(t); setTimeout(()=>t.remove(),2200); }
+function makeJoinLink(g){ const u = new URL(location.href); u.search = ""; u.searchParams.set("join", g.id); u.searchParams.set("code", g.inviteCode || ""); return u.toString(); }
+function code(){ return Math.random().toString(36).slice(2,10) + Date.now().toString(36).slice(-4); }
+function initials(s=""){ return (String(s).trim().split(/\s+/).slice(0,2).map(x=>x[0]).join("") || "?").toUpperCase(); }
+function escapeHtml(s=""){ return String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c])); }
+function hasPhone(s){ return /(?:\+?\d[\s().-]*){9,}/.test(String(s)); }
+</script>
 </body>
 </html>
